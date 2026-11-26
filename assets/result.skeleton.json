@@ -1,0 +1,24 @@
+{
+  "case_id": "",
+  "status": "partial",
+  "status_reason": "",
+  "summary": "",
+  "bilingual_segments": [],
+  "term_table": {
+    "terms": [],
+    "consistency_report": ""
+  },
+  "protected_entities": [],
+  "evidence": [],
+  "uncertainty": [],
+  "verification": {
+    "term_consistency": "",
+    "segment_completeness": "",
+    "literal_retention": "",
+    "relation_checklist": [],
+    "human_confirm": []
+  },
+  "change_records": [],
+  "sources": [],
+  "limits": {}
+}
