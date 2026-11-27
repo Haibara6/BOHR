@@ -1,0 +1,6 @@
+{
+  "case_id": "t-case",
+  "output_contract": {
+    "required_fields": ["summary", "bilingual_segments", "custom_score"]
+  }
+}

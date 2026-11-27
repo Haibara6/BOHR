@@ -1,0 +1,61 @@
+{
+  "case_id": "",
+  "scope": "",
+  "source_language": "",
+  "target_language": "",
+  "status": "partial",
+  "status_reason": "",
+  "summary": "",
+  "bilingual_segments": [],
+  "term_table": {
+    "terms": []
+  },
+  "protected_entities": [],
+  "evidence": [],
+  "uncertainty": [],
+  "verification": {
+    "term_consistency": {
+      "matched": 0,
+      "assigned": 0,
+      "rate": null,
+      "mismatch_segments": [],
+      "ambiguous_segments": [],
+      "missing_canonical": [],
+      "structural_errors": []
+    },
+    "segment_completeness": {
+      "covered": 0,
+      "inventory": 0,
+      "result": 0,
+      "rate": null,
+      "exact": false,
+      "missing": [],
+      "extra": [],
+      "duplicated": [],
+      "duplicated_inventory": []
+    },
+    "literal_retention": {
+      "hit": 0,
+      "checked": 0,
+      "rate": null,
+      "hard_miss": 0,
+      "hard_miss_items": [],
+      "unit_warn": 0,
+      "soft_warn": 0,
+      "warnings": []
+    },
+    "relation_retention": {
+      "checked": 0,
+      "hit": 0,
+      "rate": null,
+      "warn_count": 0,
+      "warn_items": []
+    },
+    "relation_checklist": [],
+    "human_confirm": [],
+    "all_hard_checks_pass": false
+  },
+  "change_records": [],
+  "sources": [],
+  "limits": {}
+}

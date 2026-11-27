@@ -1,0 +1,22 @@
+[
+  {
+    "seg_id": "R1",
+    "source": "The treatment did not reduce mortality.",
+    "translation": "该治疗未降低死亡率。"
+  },
+  {
+    "seg_id": "R2",
+    "source": "Although small, the effect was significant.",
+    "translation": "虽然效应较小，但它是显著的。"
+  },
+  {
+    "seg_id": "R3",
+    "source": "The drug failed to induce apoptosis.",
+    "translation": "该药物诱导了凋亡。"
+  },
+  {
+    "seg_id": "R4",
+    "source": "Therefore, at least 80% of cells survived.",
+    "translation": "因此，至少 80% 的细胞存活。"
+  }
+]

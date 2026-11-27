@@ -1,0 +1,5 @@
+[
+  {"seg_id":"S001","kind":"paragraph","location":"p1","page":1},
+  {"seg_id":"S002","kind":"paragraph","location":"p2","page":2},
+  {"seg_id":"S002","kind":"paragraph","location":"p2","page":2}
+]
