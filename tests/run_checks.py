@@ -57,12 +57,30 @@ def run_segments(inventory, result):
         )
 
 
-def run_terms(tsv, segments="segments_ok.json"):
+TERMS_TSV = {
+    "missing_canonical": (
+        "source_term\tsense_id\tcanonical_translation\tdomain\tcontext_clues\texample\tnotes\tretention\n"
+        "cell viability\tcell-viability\t\tcell biology\t\t\t\ttranslate\n"
+    ),
+    "bad_retention": (
+        "source_term\tsense_id\tcanonical_translation\tdomain\tcontext_clues\texample\tnotes\tretention\n"
+        "cell viability\tcell-viability\t细胞活力\tcell biology\t\t\t\ttranslated\n"
+    ),
+    "bad_columns": (
+        "source_term\tsense_id\tcanonical_translation\tdomain\tcontext_clues\texample\tnotes\tretention\n"
+        "cell viability\tcell-viability\t细胞活力\tcell biology\t\t\t\n"
+    ),
+}
+
+
+def run_terms(name, segments="segments_ok.json"):
     with _TempDir() as td:
+        tsv_path = td / "terms.tsv"
+        tsv_path.write_text(TERMS_TSV[name], encoding="utf-8")
         out = td / "report.json"
         return _run(
             [sys.executable, str(SCRIPTS / "check_terms.py"),
-             "--terms", str(FIXTURES / tsv),
+             "--terms", str(tsv_path),
              "--segments", str(FIXTURES / segments), "--json-out", str(out)],
             out,
         )
@@ -114,17 +132,17 @@ class SegmentChecks(unittest.TestCase):
 
 class TermChecks(unittest.TestCase):
     def test_missing_canonical(self):
-        code, report = run_terms("terms_missing_canonical.tsv")
+        code, report = run_terms("missing_canonical")
         self.assertEqual(code, 1)
         self.assertTrue(report["missing_canonical"])
 
     def test_bad_retention(self):
-        code, report = run_terms("terms_bad_retention.tsv")
+        code, report = run_terms("bad_retention")
         self.assertEqual(code, 1)
         self.assertTrue(report["invalid_retention"])
 
     def test_bad_columns(self):
-        code, report = run_terms("terms_bad_columns.tsv")
+        code, report = run_terms("bad_columns")
         self.assertEqual(code, 1)
         self.assertTrue(report["bad_columns"])
 
