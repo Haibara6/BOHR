@@ -1,0 +1,5 @@
+[
+  {"seg_id":"S1","source":"The value was reported² by others.","translation":"该值已由他人报告。"},
+  {"seg_id":"S2","source":"Absorbance was measured at 20 cm⁻¹.","translation":"在 20 cm⁻² 处测定吸光度。"},
+  {"seg_id":"S3","source":"Fig. 2 shows the trend.","translation":"图 2 显示了趋势。"}
+]

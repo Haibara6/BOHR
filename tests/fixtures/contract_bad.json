@@ -1,0 +1,16 @@
+{
+  "case_id": "t-case",
+  "scope": "full",
+  "source_language": "en",
+  "target_language": "zh-CN",
+  "status": "partial",
+  "summary": "部分完成",
+  "bilingual_segments": [
+    {"seg_id":"S001","location":"p1","page":1,"kind":"paragraph","source":"The value is 5.","translation":"值为 5。"}
+  ],
+  "verification": {
+    "all_hard_checks_pass": false,
+    "segment_completeness": {"exact": true},
+    "relation_checklist": []
+  }
+}

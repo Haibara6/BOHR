@@ -26,6 +26,13 @@ NMR	NMR	NMR	chemistry		核磁共振，缩写		keep
 - `notes`：禁用译法、首次出现位置、单复数/大小写约定、缩写全称/中文注释等。
 - `retention`：术语保留策略，取值 `keep`（始终保留原文）/ `translate`（翻译成中文）/ `annotate`（首次注释+后续保留原文）。**缩写、方法名、试剂名、化合物名、专名默认 `keep` 或 `annotate`；概念词默认 `translate`。**
 
+## 结构预检（check_terms.py 强制执行）
+
+- 每个数据行正好 8 列；缺列/多列报 `bad_columns`。
+- `source_term + sense_id` 唯一；重复报 `duplicate_terms`。
+- `retention` 取值限 `keep/translate/annotate`；非法报 `invalid_retention`。
+- `retention=translate` 时 `canonical_translation` 不得为空；空则报 `missing_canonical`，不再静默回退成 source。只有 `keep`/`annotate` 的空 canonical 才回退成 source（本就保留原文）。
+
 ## 抽取与义项判定（WSD）
 
 1. 只从任务 `scope` 内的标题、摘要、关键词、各章节标题、正文、图题、表头、结论抽取术语；范围外内容不抽取。
@@ -66,6 +73,6 @@ NMR	NMR	NMR	chemistry		核磁共振，缩写		keep
 - 习语、历史/法律/宗教负载词、机构名、人名：采用"直译+括号注释"或"保留原文+脚注"，在 `uncertain` 说明，不强行字面直译。
 - 度量单位：数值不变；单位保留原文或换算为规范单位并标注，不得只改单位不改数值或反之。
 
-## 术语一致率口径（供自评，不冒充官方分数）
+## 术语一致率口径（唯一权威来源）
 
-`一致率 = 命中段数 / 归属该义项的段数`。标题、摘要、图注、结论四类位置单独复核一遍。
+`一致率 = 命中段数 / 归属该义项的段数`，由 `scripts/build_verification.py` 自动写入 `result.json.verification.term_consistency`，是该指标的**唯一权威来源**；`term_table` 不再手写 `consistency_report`。`check_terms.py` 同时输出 `homographs`（同形异义词清单），同一 `source_term` 出现多个义项/domain 时提示复核 sense 归属。标题、摘要、图注、结论四类位置单独复核一遍。

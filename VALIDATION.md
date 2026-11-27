@@ -35,9 +35,22 @@
 1. **区间引用漏检**：真实论文中的 `[2–4]`、`[7–10]` 原先不进入引用检查。已扩展引用正则，支持逗号、ASCII 连字符、en dash 和 em dash；改变 `[2–4]` 为 `[2–5]` 的负例会返回非零。
 2. **多图编号漏检**：`Figs. 2 and 3` 原先不进入图表检查。现已分别检查 2、3；译成“图 2 和图 4”会产生 1 个硬错误。
 3. **Unicode 负号漏检**：paper5 校准方程 `Log (Mw) = − 0.1719 T + 11.585` 原先不进入关系检查。现已统一 Unicode 负号与空白；把负号改成正号的负例会返回非零。
-4. **单位误报**：`Fig. 2 shows` 中的 `shows` 原先会被当成单位，产生无意义的 `unit_warn`。现仅检查已知单位；“安全”中的“安”也不再被当成电流单位 `A` 的合法译文。
+4. **单位误报**：`Fig. 2 shows` 中的 `shows` 原先会被当成单位，产生无意义的 `unit_warn`。现仅检查已知单位且要求单位后不得紧跟字母/数字；“安全”中的“安”也不再被当成电流单位 `A` 的合法译文。
 5. **双栏阅读顺序**：两篇论文均为双栏排版，普通 layout 文本可能把左右栏放在同一视觉行。规范已明确要求按栏分别抽取，不直接拼接同行文字，并抽查跨页接续。
 6. **上标恢复**：PDF 抽取会把 `10⁴` 变为 `104`。本次通过渲染原页确认上标后恢复；规范已要求分子量、指数、波数等先渲染核对，无法确认时标 `uncertain`。
+
+## 脚本与数据模型增强（本版新增）
+
+7. **inventory 侧重复段号检测**：`check_segments.py` 现同时检测 `duplicated_inventory` 与 `duplicated`，完整率用去重后的 inventory 计算；两个 inventory 段误标 `S007` 会返回非零，不再被重复段抬高完整率。
+8. **硬失败明细进 `result.json`**：`build_verification.py` 把字面量硬失败与软校验明细写入 `verification.literal_retention.hard_miss_items` 与 `warnings`，核验者无需再翻 `work/` 目录即可定位“哪段、哪个字面量”。
+9. **作者-年份与上标引用检查**：新增 `(Smith et al., 2020)` / `Smith et al. (2020)` 硬校验（年份与首作者名保留，作者译成中文会触发 `citation_author_year`），月份词不作为引用处理；上标数字 `²,³` 进软校验，复合单位内的上标不重复计数。
+10. **复合/指数单位覆盖**：单位词典补齐 `cm⁻¹`、`m⁻¹`、`m²`、`m³`、`μg/mL`、`cells/mL`、`M⁻¹s⁻¹` 等，波数抄错时至少产生软校验 `warn`；`segmentation.md` 点名要核对的 `cm−1` 已真正纳入。
+11. **关系符号中文对应**：`<`↔小于、`>`↔大于、`~`/`≈`↔约/大约 等做成映射表，`~80%` 译“约 80%”不再误判为 HARD MISS。
+12. **术语表结构预检**：`check_terms.py` 断言 8 列、`source_term+sense_id` 唯一、`retention` 枚举合法、`translate` 术语空 canonical 报错（不再静默回退成 source）。
+13. **契约与结构校验**：新增 `check_contract.py` 逐项断言 `output_contract` 字段在 `result.json` 顶层存在并按类型填值，同时检查每段六个必填字段、无重复 `seg_id`、`seg_id` 引用悬空与 `success` 状态一致性。
+14. **语言声明与元数据 kind**：`result.json` 顶层声明 `source_language`/`target_language`；inventory 新增 `authors/affiliation/doi/journal/keywords` 元数据 kind，`reference` 重新定义为“正文内引文标记”。
+
+上述新增检查由 `tests/run_checks.py` 与 `tests/fixtures/` 固化，本地已逐项通过（区间引用、多图编号、Unicode 负号、作者-年份、`~≈`、上标数字、复合单位、单位误报、空译文、retention、inventory 重复、契约完备性、seg_id 悬空）。
 
 ## 本地复现命令
 
@@ -48,9 +61,11 @@ python3 scripts/check_terms.py --terms work/terms.tsv --segments work/segments.j
 python3 scripts/check_segments.py --inventory work/inventory.json --result work/segments.json --json-out work/segments.report.json
 python3 scripts/check_literals.py --segments work/segments.json --json-out work/literals.report.json
 python3 scripts/build_verification.py --terms-report work/terms.report.json --segments-report work/segments.report.json --literals-report work/literals.report.json --out work/verification.json
+python3 scripts/check_contract.py --result result.json --case /input/case.json --json-out work/contract.report.json
+python3 tests/run_checks.py
 ```
 
-前三个脚本发现硬错误时返回非零；修正后重跑。第四个脚本生成量化 `verification.json`，存在术语不一致、缺段/重段/多余段或字面量硬错误时返回非零。
+前三个脚本发现硬错误时返回非零；第四个脚本生成量化 `verification.json`；第五个脚本校验契约与结构；`tests/run_checks.py` 防回归。
 
 ## 限制
 

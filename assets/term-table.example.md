@@ -19,4 +19,4 @@ FRAP	FRAP	FRAP	biochem		ferric reducing antioxidant power，保留缩写		annota
 - `notes`：禁用译法、首次出现位置、缩写全称/中文注释等。
 - `retention`：`keep`（保留原文）/ `translate`（翻译）/ `annotate`（首次注释+后续保留原文）。
 
-实际运行时的术语表写为 `work/terms.tsv`（同上 8 列），由 `scripts/check_terms.py` 读取校验。本模板仅供 Agent 参考格式。
+实际运行时的术语表写为 `work/terms.tsv`（同上 8 列），由 `scripts/check_terms.py` 读取校验：每行正好 8 列、`source_term+sense_id` 唯一、`retention` 取 `keep/translate/annotate`、`translate` 术语的 `canonical_translation` 不得为空。本模板仅供 Agent 参考格式。

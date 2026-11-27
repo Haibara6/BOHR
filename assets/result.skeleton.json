@@ -1,13 +1,14 @@
 {
   "case_id": "",
   "scope": "",
+  "source_language": "",
+  "target_language": "",
   "status": "partial",
   "status_reason": "",
   "summary": "",
   "bilingual_segments": [],
   "term_table": {
-    "terms": [],
-    "consistency_report": ""
+    "terms": []
   },
   "protected_entities": [],
   "evidence": [],
@@ -18,7 +19,9 @@
       "assigned": 0,
       "rate": null,
       "mismatch_segments": [],
-      "ambiguous_segments": []
+      "ambiguous_segments": [],
+      "missing_canonical": [],
+      "structural_errors": []
     },
     "segment_completeness": {
       "covered": 0,
@@ -28,14 +31,18 @@
       "exact": false,
       "missing": [],
       "extra": [],
-      "duplicated": []
+      "duplicated": [],
+      "duplicated_inventory": []
     },
     "literal_retention": {
       "hit": 0,
       "checked": 0,
       "rate": null,
       "hard_miss": 0,
-      "unit_warn": 0
+      "hard_miss_items": [],
+      "unit_warn": 0,
+      "soft_warn": 0,
+      "warnings": []
     },
     "relation_checklist": [],
     "human_confirm": [],
