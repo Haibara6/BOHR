@@ -1,5 +1,6 @@
 {
   "case_id": "",
+  "scope": "",
   "status": "partial",
   "status_reason": "",
   "summary": "",
@@ -12,11 +13,33 @@
   "evidence": [],
   "uncertainty": [],
   "verification": {
-    "term_consistency": "",
-    "segment_completeness": "",
-    "literal_retention": "",
+    "term_consistency": {
+      "matched": 0,
+      "assigned": 0,
+      "rate": null,
+      "mismatch_segments": [],
+      "ambiguous_segments": []
+    },
+    "segment_completeness": {
+      "covered": 0,
+      "inventory": 0,
+      "result": 0,
+      "rate": null,
+      "exact": false,
+      "missing": [],
+      "extra": [],
+      "duplicated": []
+    },
+    "literal_retention": {
+      "hit": 0,
+      "checked": 0,
+      "rate": null,
+      "hard_miss": 0,
+      "unit_warn": 0
+    },
     "relation_checklist": [],
-    "human_confirm": []
+    "human_confirm": [],
+    "all_hard_checks_pass": false
   },
   "change_records": [],
   "sources": [],

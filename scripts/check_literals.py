@@ -6,7 +6,7 @@
 
 - segments.json：数组 [{"seg_id","source","translation"}]，UTF-8。
 - 硬校验（不一致 → 退出码 1）：图表编号、文献引用标记、比较关系符号+数字。
-- 软校验（仅提示，不阻断）：单位（原文单位或对应中文单位，二选一）。
+- 软校验（仅提示，不阻断）：已知单位（原文单位或对应中文单位，二选一）。
 
 设计原则：只检查"字面量必须原样保留"的确定性部分，不做语义判断。
 """
@@ -15,24 +15,31 @@ import json
 import re
 import sys
 
-# 图表编号：Fig. 1 / Figure 1 / Table 2（大小写不敏感）
-FIG_RE = re.compile(r"\b(Fig(?:ure)?\.?|Table)\s*(\d+)\b", re.IGNORECASE)
-# 文献引用标记：[12] / [12,13] / [12, 13]
-CITE_RE = re.compile(r"\[\s*\d+(?:\s*[,，]\s*\d+)*\s*\]")
-# 比较/关系符号 + 数字：< 0.05, ≥ 3, ± 0.1, = 5, ≈ 0.9, > 10
-REL_RE = re.compile(r"(<=|≥|≤|>=|<|>|=|±|≈|~)\s*(-?\d+(?:\.\d+)?)")
+# 图表编号：Fig. 1 / Figure 1 / Figs. 2 and 3 / Table 2（大小写不敏感）
+FIG_RE = re.compile(
+    r"\b(Fig(?:ure)?s?\.?|Tables?)\s*(\d+)(?:\s*(?:and|&|,)\s*(\d+))?",
+    re.IGNORECASE,
+)
+# 文献引用标记：[12] / [12,13] / [2–4] / [2-4] / [2,4–6]
+CITE_RE = re.compile(r"\[\s*\d+(?:\s*(?:[,，]|[-–—])\s*\d+)*\s*\]")
+# 比较/关系符号 + 数字：< 0.05, ≥ 3, ± 0.1, = 5, ≈ 0.9, > 10, = − 0.1719
+REL_RE = re.compile(r"(<=|≥|≤|>=|<|>|=|±|≈|~)\s*([-−–]?\s*\d+(?:\.\d+)?)")
 
 # 单位 → 可接受的中文对应（用于软校验：原文单位 或 中文单位 二者之一即可）
 UNITS = {
     "μm": ["微米", "µm"], "µm": ["微米", "μm"], "nm": ["纳米"], "mm": ["毫米"],
     "cm": ["厘米"], "km": ["千米", "公里"], "eV": ["电子伏", "电子伏特"],
     "keV": ["千电子伏"], "MeV": ["兆电子伏"], "GeV": ["吉电子伏"],
-    "K": ["开尔文", "开"], "°C": ["摄氏度"], "°F": ["华氏度"], "%": [],
+    "K": ["开尔文"], "°C": ["摄氏度"], "°F": ["华氏度"], "%": [],
     "mol": ["摩尔"], "g": ["克"], "kg": ["千克", "公斤"], "s": ["秒"],
     "ms": ["毫秒"], "min": ["分钟"], "h": ["小时"], "Hz": ["赫兹"],
     "kHz": ["千赫兹"], "MHz": ["兆赫兹"], "GHz": ["吉赫兹"],
-    "V": ["伏特", "伏"], "A": ["安培", "安"], "W": ["瓦特", "瓦"],
-    "Pa": ["帕斯卡", "帕"], "Ω": ["欧姆", "欧"], "Å": ["埃"],
+    "V": ["伏特"], "A": ["安培"], "W": ["瓦特"],
+    "Pa": ["帕斯卡"], "Ω": ["欧姆"], "Å": ["埃"],
+    "L": ["升"], "mL": ["毫升"], "μL": ["微升"], "µL": ["微升"],
+    "M": ["摩尔每升"], "mM": ["毫摩尔每升"], "μM": ["微摩尔每升"],
+    "µM": ["微摩尔每升"], "nM": ["纳摩尔每升"], "ppm": [], "ppb": [],
+    "J": ["焦耳"], "kJ": ["千焦"], "N": ["牛顿"], "m": ["米"],
     "Da": ["道尔顿"], "kDa": ["千道尔顿"], "a.u.": ["原子单位"],
 }
 UNIT_RE = re.compile(
@@ -49,6 +56,12 @@ def _norm(s):
     # 统一比较符号，避免译文把 ≤ 写成 <= 被判不一致
     return (s.replace("≤", "<=").replace("≥", ">=")
              .replace("±", "+/-").replace("≈", "~"))
+
+
+def _norm_number(s):
+    # 统一 Unicode 负号/短横及符号后的空白，避免 "= − 0.1719" 漏检或误判。
+    return (s.replace("−", "-").replace("–", "-")
+             .replace(" ", ""))
 
 
 def load_segments(path):
@@ -69,16 +82,18 @@ def load_segments(path):
 
 
 def check_figures(seg):
-    """返回 (hit, miss) 的图表编号项。"""
+    """返回图表编号项；Figs. 2 and 3 中的 2、3 分别检查。"""
     items = []
     for m in FIG_RE.finditer(seg["source"]):
-        num = m.group(2)
         tr = seg["translation"]
-        ok = (num in tr) and bool(re.search(r"图|表|Fig|Table|Figure", tr, re.IGNORECASE))
-        items.append({
-            "literal": m.group(0), "num": num,
-            "ok": ok, "kind": "figure_table_number",
-        })
+        for num in (m.group(2), m.group(3)):
+            if not num:
+                continue
+            ok = (num in tr) and bool(re.search(r"图|表|Fig|Table|Figure", tr, re.IGNORECASE))
+            items.append({
+                "literal": m.group(0), "num": num,
+                "ok": ok, "kind": "figure_table_number",
+            })
     return items
 
 
@@ -95,7 +110,7 @@ def check_relations(seg):
     for m in REL_RE.finditer(seg["source"]):
         sym, num = m.group(1), m.group(2)
         tr = seg["translation"]
-        ok = (num in tr) and (_norm(sym) in _norm(tr))
+        ok = (_norm_number(num) in _norm_number(tr)) and (_norm(sym) in _norm(tr))
         items.append({"literal": m.group(0), "ok": ok, "kind": "relation_sign_number"})
     return items
 
@@ -104,16 +119,14 @@ def check_units(seg):
     items = []
     for m in UNIT_RE.finditer(seg["source"]):
         num, unit = m.group(1), m.group(2)
-        low = unit.casefold()
+        # 只检查已知单位，避免把 "Fig. 2 shows" 中的 shows 误判为单位。
+        if unit not in UNITS:
+            continue
         tr = seg["translation"]
-        # 原文单位命中，或任一中文对应命中
+        # 原文单位命中，或任一中文对应命中。
         hit_orig = _contains(tr, unit)
         hit_zh = any(zh and _contains(tr, zh) for zh in UNITS.get(unit, []))
-        # 若单位不在映射表里，只检查原文形式；否则二者任一即可
-        if unit in UNITS:
-            ok = hit_orig or hit_zh
-        else:
-            ok = hit_orig
+        ok = hit_orig or hit_zh
         items.append({"literal": m.group(0), "unit": unit, "ok": ok, "kind": "unit"})
     return items
 

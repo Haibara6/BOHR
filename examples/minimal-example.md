@@ -18,22 +18,26 @@
 
 ## 调用方式（Agent 按 SKILL.md 执行）
 
-1. 读 `case.json`/`task.md` → 记录 `case_id=demo-001`、范围 `p2–3`、`output_contract` 字段清单（`summary`、`bilingual_segments`）、保留策略（默认 `annotate`）。
-2. `pdf-text-tool` 抽取 p2–3 结构化文本 → 建 `work/inventory.json`（S001…S00n）。
-3. 抽取术语并做词义消歧 → `work/terms.tsv`（义项级，8 列含 retention）并锁定；识别命名实体 → `work/protected_entities.json`。
-4. **批量**逐段翻译（每请求 5–10 段），每段必填 `seg_id/location/source/translation`，命中保护清单的实体原样保留 → `work/segments.json`。
-5. 校验：
-   - `python3 scripts/check_terms.py --terms work/terms.tsv --segments work/segments.json`
-   - `python3 scripts/check_segments.py --inventory work/inventory.json --result work/segments.json`
-   - `python3 scripts/check_literals.py --segments work/segments.json`
-6. 写 `/app/output/result.json`：`output_contract` 声明的 `summary`、`bilingual_segments` **合并到顶层**。
+1. 读输入，确定 `case_id=demo-001`、`scope=pages:2-3`、契约字段和保留策略；第 2–3 页以外不处理。
+2. 只抽取第 2–3 页，建立 `work/inventory.json`；从范围内文本生成 `work/terms.tsv` 和 `work/protected_entities.json`。
+3. 每次请求翻译 5–10 段，每批更新 `work/segments.json`；高风险段写 `rationale`。
+4. 校验并生成量化报告：
+
+   ```bash
+   python3 scripts/check_terms.py --terms work/terms.tsv --segments work/segments.json --json-out work/terms.report.json
+   python3 scripts/check_segments.py --inventory work/inventory.json --result work/segments.json --json-out work/segments.report.json
+   python3 scripts/check_literals.py --segments work/segments.json --json-out work/literals.report.json
+   python3 scripts/build_verification.py --terms-report work/terms.report.json --segments-report work/segments.report.json --literals-report work/literals.report.json --out work/verification.json
+   ```
+
+5. 写 `/app/output/result.json`：契约字段在顶层，`work/verification.json` 原样并入 `verification`。
 
 ## 示意输出（片段，标记为示例）
 
-`result.json`（注意 `summary` 与 `bilingual_segments` 都在**顶层**）：
 ```json
 {
   "case_id": "demo-001",
+  "scope": "pages:2-3",
   "status": "success",
   "summary": "(示例) 已译第 2–3 页全部段落，术语一致，段落完整，字面量保留。",
   "bilingual_segments": [
@@ -48,11 +52,18 @@
       "uncertain": null
     }
   ],
-  "term_table": { "terms": [ { "source_term": "spin-orbit coupling", "sense_id": "soc", "canonical_translation": "自旋-轨道耦合", "domain": "physics", "context_clues": [], "example": "", "notes": "", "retention": "translate" } ], "consistency_report": "1/1 matched" },
+  "term_table": { "terms": [ { "source_term": "spin-orbit coupling", "sense_id": "soc", "canonical_translation": "自旋-轨道耦合", "domain": "physics", "context_clues": [], "example": "", "notes": "", "retention": "translate" } ], "consistency_report": "1/1，rate=1.0" },
   "protected_entities": [ { "type": "abbrev", "text": "DPPH", "location": "p3", "retention": "keep_strict" } ],
   "evidence": [ { "seg_id": "S007", "location": "p2-col1-para2", "type": "paragraph", "source_text": "The spin-orbit coupling drives the transition at 300 K." } ],
   "uncertainty": [],
-  "verification": { "term_consistency": "1/1", "segment_completeness": "complete", "literal_retention": "hard_miss=0, unit_warn=0", "relation_checklist": [], "human_confirm": [] },
+  "verification": {
+    "term_consistency": { "matched": 1, "assigned": 1, "rate": 1.0, "mismatch_segments": [], "ambiguous_segments": [] },
+    "segment_completeness": { "covered": 1, "inventory": 1, "result": 1, "rate": 1.0, "exact": true, "missing": [], "extra": [], "duplicated": [] },
+    "literal_retention": { "hit": 0, "checked": 0, "rate": null, "hard_miss": 0, "unit_warn": 0 },
+    "relation_checklist": [ { "seg_id": "S007", "item": "数字单位", "result": "pass", "note": "300 K 保留" } ],
+    "human_confirm": [],
+    "all_hard_checks_pass": true
+  },
   "change_records": [],
   "sources": [ { "path": "paper.pdf", "pages": [2, 3], "kind": "pdf" } ],
   "limits": {}
@@ -62,4 +73,4 @@
 ## 说明
 
 - 上面所有数值与字段为**示例**，不代表任何正式测试成绩或运行日志。
-- 正式案例的 `output_contract` 字段以 `case.json` 为准，须**原样合到 `result.json` 顶层**；Skill 自带的 `term_table`/`evidence`/`verification` 等作为附加顶层字段并存。
+- 正式案例的 `output_contract` 字段以 `case.json` 为准，须原样合到 `result.json` 顶层；Skill 自带字段作为附加顶层字段并存。
